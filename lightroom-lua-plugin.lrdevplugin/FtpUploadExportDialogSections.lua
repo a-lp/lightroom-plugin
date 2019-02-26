@@ -46,6 +46,8 @@ local function updateExportStatus( propertyTable )
 		
 		if propertyTable.putInSubfolder then
 			fullPath = LrFtp.appendFtpPaths( fullPath, propertyTable.path )
+		-- else
+		-- 	fullPath = LrFtp.appendFtpPaths( fullPath, b:getName() )
 		end
 		
 		propertyTable.fullPath = fullPath

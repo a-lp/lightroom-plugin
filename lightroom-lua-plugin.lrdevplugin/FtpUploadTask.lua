@@ -40,6 +40,7 @@ end
 --------------------------------------------------------------------------------
 
 function sendHttp(path)
+	outputToLog(catalog:getName())
 	--trasformazione del messaggio in JSON--
 	local message= '{"pathFile" : "'..path..'", "images":['
 	for a, b in ipairs(catalog:getActiveSources()) do
@@ -57,7 +58,7 @@ function sendHttp(path)
 	end
 	message=message:sub(1, -2).."]}"
 	--outputToLog("Message\n"..message)
-	LrTasks.startAsyncTask(function() sendPost(message) end)
+	--LrTasks.startAsyncTask(function() sendPost(message) end)
 end
 
 function sendPost(message)
