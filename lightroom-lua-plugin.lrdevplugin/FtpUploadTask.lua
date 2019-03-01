@@ -75,8 +75,8 @@ function sendPost(message)
 	end
 end
 
-function sendImage(photo, filename, path)
-	local message = '{"pathFile" : "' .. path .. '","fileName":"' .. filename .. '","tags" : [ '
+function sendImage(photo, filename, path, description)
+	local message = '{"description" : "'..description..'", "pathFile" : "' .. path .. '","fileName":"' .. filename .. '","tags" : [ '
 	local index = 0
 	for tag in string.gmatch(photo:getFormattedMetadata("keywordTags"), "%a+") do
 		message = message .. '"' .. tag .. '", '
@@ -198,7 +198,7 @@ function FtpUploadTask.processRenderedPhotos(functionContext, exportContext)
 			local success = ftpInstance:putFile(pathOrMessage, filename)
 			LrTasks.startAsyncTask(
 				function()
-					sendImage(photoRendered, photoRendered:getFormattedMetadata("fileName"), ftpInstance.path)
+					sendImage(photoRendered, photoRendered:getFormattedMetadata("fileName"), ftpInstance.path, photoRendered:getFormattedMetadata("caption"))
 				end
 			)
 			if not success then
