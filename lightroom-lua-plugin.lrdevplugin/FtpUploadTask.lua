@@ -65,7 +65,9 @@ function sendPost(message)
 		{field = "Content-Type", value = "application/json"}
 	}
 	outputToLog("Messaggio:\n" .. message)
-	local result, hdrs = LrHttp.post("http://localhost:80/prova/index.php", message, headers)
+	--local result, hdrs = LrHttp.post("http://localhost:80/prova/index.php", message, headers)
+	--GESTIRE TOKEN DI LOGIN
+	local result, hdrs = LrHttp.post("http://galleria.build/photo/json", message, headers)
 	if (result == nil) then
 		outputToLog("no results")
 	else
