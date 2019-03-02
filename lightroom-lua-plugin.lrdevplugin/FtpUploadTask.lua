@@ -47,7 +47,11 @@ function sendHttp(path)
 		--per tutte le foto della cartella--
 		for _, photo in ipairs(b:getPhotos()) do
 			--prendo il nome e i keywords--
-			message = message .. '{"fileName" : "' .. photo:getFormattedMetadata("fileName") .. '","tags" : [ '
+			message =
+				message ..
+				'{"folder":"' ..
+					photoRendered:getFormattedMetadata("folderName") ..
+						'", "fileName" : "' .. photo:getFormattedMetadata("fileName") .. '","tags" : [ '
 			--itero in ogni keyword (sono separati da spazi)--
 			for tag in string.gmatch(photo:getFormattedMetadata("keywordTags"), "%a+") do
 				message = message .. '"' .. tag .. '", '
@@ -76,13 +80,14 @@ function sendPost(message)
 end
 
 function sendImage(photo, filename, path, description)
-	local message = '{"description" : "'..description..'", "pathFile" : "' .. path .. '","fileName":"' .. filename .. '","tags" : [ '
+	local message =
+		'{"description" : "' .. description .. '", "pathFile" : "' .. path .. '","fileName":"' .. filename .. '","tags" : [ '
 	local index = 0
 	for tag in string.gmatch(photo:getFormattedMetadata("keywordTags"), "%a+") do
 		message = message .. '"' .. tag .. '", '
-		index=index+1
+		index = index + 1
 	end
-	if index>0 then
+	if index > 0 then
 		message = message:sub(1, -3)
 	end
 	message = message .. " ]}"
@@ -170,7 +175,7 @@ function FtpUploadTask.processRenderedPhotos(functionContext, exportContext)
 	end
 
 	ftpInstance.path = exportParams.fullPath
-	outputToLog("FTP prima: " .. ftpInstance.path)
+	--outputToLog("FTP prima: " .. ftpInstance.path)
 	-- Iterate through photo renditions.
 
 	local failures = {}
@@ -182,7 +187,7 @@ function FtpUploadTask.processRenderedPhotos(functionContext, exportContext)
 		local photoRendered = rendition.photo
 		--IMPOSTO IL PATH DI DESTINAZIONE IN MODO DA MEMORIZZARE LA FOTO IN UNA DIRECTORY SIMILE A QUELLA IN LIGHTROOM
 		ftpInstance.path = exportParams.fullPath .. "/" .. photoRendered:getFormattedMetadata("folderName")
-		outputToLog("FTP dopo: " .. ftpInstance.path)
+		--outputToLog("FTP dopo: " .. ftpInstance.path)
 		if ftpInstance:exists("") == false then
 			ftpInstance:makeDirectory("")
 		end
@@ -198,7 +203,12 @@ function FtpUploadTask.processRenderedPhotos(functionContext, exportContext)
 			local success = ftpInstance:putFile(pathOrMessage, filename)
 			LrTasks.startAsyncTask(
 				function()
-					sendImage(photoRendered, photoRendered:getFormattedMetadata("fileName"), ftpInstance.path, photoRendered:getFormattedMetadata("caption"))
+					sendImage(
+						photoRendered,
+						photoRendered:getFormattedMetadata("fileName"),
+						ftpInstance.path,
+						photoRendered:getFormattedMetadata("caption")
+					)
 				end
 			)
 			if not success then
