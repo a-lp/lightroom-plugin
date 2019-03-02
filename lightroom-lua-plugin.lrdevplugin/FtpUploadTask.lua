@@ -218,10 +218,12 @@ function FtpUploadTask.processRenderedPhotos(functionContext, exportContext)
 		LrDialogs.message(message, table.concat(failures, "\n"))
 	end
 
-	--Aspetto che tutti i task finiscano
+	--Aspetto che tutte le foto vengano caricate nel DB
 	while (finish<nPhotos) do
 		LrTasks.yield()
 	end
+
+	--Se ci sono stati errori nel caricamento delle foto nel DB, mostro un messaggio di errore con le photo che hanno generato problemi
 	if #errors > 0 then
 		local message
 		if #errors == 1 then
