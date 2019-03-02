@@ -29,6 +29,7 @@ local LrApplication = import "LrApplication"
 
 local catalog = LrApplication.activeCatalog()
 local errors = {}
+local finish = 0
 
 FtpUploadTask = {}
 
@@ -39,7 +40,7 @@ local function outputToLog(message)
 end
 --------------------------------------------------------------------------------
 
-function sendPost(message)
+function sendPost(message, photo)
 	local headers = {
 		{field = "Content-Type", value = "application/json"}
 	}
@@ -48,13 +49,14 @@ function sendPost(message)
 	--GESTIRE TOKEN DI LOGIN
 	local result, hdrs = LrHttp.post("http://galleria.build/photo/json", message, headers)
 	if (result == nil) then
-		table.insert(errors, message)
+		table.insert(errors, photo)
 	else
 		--outputToLog("Response by the server received:\n" .. result)
 		if (not (result == "success")) then
-			table.insert(errors, message)
+			table.insert(errors, photo)
 		end
 	end
+	finish = finish+1
 end
 
 function prepareImage(folder, photo, filename, path, description)
@@ -72,11 +74,7 @@ function prepareImage(folder, photo, filename, path, description)
 		message = message:sub(1, -3)
 	end
 	message = message .. " ]}"
-	LrTasks.startAsyncTask(
-		function()
-			sendPost(message)
-		end
-	)
+	sendPost(message, filename)
 end
 
 function FtpUploadTask.processRenderedPhotos(functionContext, exportContext)
@@ -218,5 +216,19 @@ function FtpUploadTask.processRenderedPhotos(functionContext, exportContext)
 			message = LOC("$$$/FtpUpload/Upload/Errors/SomeFileFailed=^1 files failed to upload correctly.", #failures)
 		end
 		LrDialogs.message(message, table.concat(failures, "\n"))
+	end
+
+	--Aspetto che tutti i task finiscano
+	while (finish<nPhotos) do
+		LrTasks.yield()
+	end
+	if #errors > 0 then
+		local message
+		if #errors == 1 then
+			message = LOC "$$$/FtpUpload/Upload/Errors/OneFileFailed=Errore nel caricamento della foto nel database."
+		else
+			message = LOC("$$$/FtpUpload/Upload/Errors/SomeFileFailed=Errore nel caricamento di ^1 foto nel database.", #errors)
+		end
+		LrDialogs.message(message, table.concat(errors, "\n"))
 	end
 end
