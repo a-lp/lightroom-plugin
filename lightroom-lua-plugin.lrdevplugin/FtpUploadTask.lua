@@ -28,6 +28,7 @@ local LrApplication = import "LrApplication"
 --============================================================================--
 
 local catalog = LrApplication.activeCatalog()
+local errors = {}
 
 FtpUploadTask = {}
 
@@ -38,32 +39,6 @@ local function outputToLog(message)
 end
 --------------------------------------------------------------------------------
 
-function sendHttp(path)
-	outputToLog(catalog:getName())
-	--trasformazione del messaggio in JSON--
-	local message = '{"pathFile" : "' .. path .. '", "images":['
-	for a, b in ipairs(catalog:getActiveSources()) do
-		--outputToLog("Active Folders: "..b:getName())
-		--per tutte le foto della cartella--
-		for _, photo in ipairs(b:getPhotos()) do
-			--prendo il nome e i keywords--
-			message =
-				message ..
-				'{"folder":"' ..
-					photoRendered:getFormattedMetadata("folderName") ..
-						'", "fileName" : "' .. photo:getFormattedMetadata("fileName") .. '","tags" : [ '
-			--itero in ogni keyword (sono separati da spazi)--
-			for tag in string.gmatch(photo:getFormattedMetadata("keywordTags"), "%a+") do
-				message = message .. '"' .. tag .. '", '
-			end
-			message = message:sub(1, -3) .. " ]},"
-		end
-	end
-	message = message:sub(1, -2) .. "]}"
-	--outputToLog("Message\n"..message)
-	--LrTasks.startAsyncTask(function() sendPost(message) end)
-end
-
 function sendPost(message)
 	local headers = {
 		{field = "Content-Type", value = "application/json"}
@@ -73,15 +48,21 @@ function sendPost(message)
 	--GESTIRE TOKEN DI LOGIN
 	local result, hdrs = LrHttp.post("http://galleria.build/photo/json", message, headers)
 	if (result == nil) then
-		outputToLog("no results")
+		table.insert(errors, message)
 	else
-		outputToLog("Response by the server received:\n" .. result)
+		--outputToLog("Response by the server received:\n" .. result)
+		if (not (result == "success")) then
+			table.insert(errors, message)
+		end
 	end
 end
 
-function sendImage(photo, filename, path, description)
+function prepareImage(folder, photo, filename, path, description)
 	local message =
-		'{"description" : "' .. description .. '", "pathFile" : "' .. path .. '","fileName":"' .. filename .. '","tags" : [ '
+		'{"folder":"' ..
+		folder ..
+			'","description" : "' ..
+				description .. '", "pathFile" : "' .. path .. '","fileName":"' .. filename .. '","tags" : [ '
 	local index = 0
 	for tag in string.gmatch(photo:getFormattedMetadata("keywordTags"), "%a+") do
 		message = message .. '"' .. tag .. '", '
@@ -203,7 +184,8 @@ function FtpUploadTask.processRenderedPhotos(functionContext, exportContext)
 			local success = ftpInstance:putFile(pathOrMessage, filename)
 			LrTasks.startAsyncTask(
 				function()
-					sendImage(
+					prepareImage(
+						photoRendered:getFormattedMetadata("folderName"),
 						photoRendered,
 						photoRendered:getFormattedMetadata("fileName"),
 						ftpInstance.path,
