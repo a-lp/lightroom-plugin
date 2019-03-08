@@ -51,6 +51,7 @@ return {
 		{ key = 'path', default = 'photos' },
 		{ key = "ftpPreset", default = nil },
 		{ key = "fullPath", default = nil },
+		{ key = "postUrl", default = nil },
 	},
 
 	startDialog = FtpUploadExportDialogSections.startDialog,
