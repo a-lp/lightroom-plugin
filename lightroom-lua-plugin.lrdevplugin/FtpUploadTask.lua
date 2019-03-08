@@ -40,14 +40,14 @@ local function outputToLog(message)
 end
 --------------------------------------------------------------------------------
 
-function sendPost(message, photo)
+function sendPost(message, photo, url)
 	local headers = {
 		{field = "Content-Type", value = "application/json"}
 	}
 	outputToLog("Messaggio:\n" .. message)
 	--local result, hdrs = LrHttp.post("http://localhost:80/prova/index.php", message, headers)
 	--GESTIRE TOKEN DI LOGIN
-	local result, hdrs = LrHttp.post("http://galleria.build/photo/json", message, headers)
+	local result, hdrs = LrHttp.post(url, message, headers)	--"http://galleria.build/photo/json"
 	if (result == nil) then
 		table.insert(errors, photo)
 	else
@@ -59,7 +59,7 @@ function sendPost(message, photo)
 	finish = finish+1
 end
 
-function prepareImage(folder, photo, filename, path, description)
+function prepareImage(folder, photo, filename, path, description, url)
 	local message =
 		'{"folder":"' ..
 		folder ..
@@ -74,7 +74,7 @@ function prepareImage(folder, photo, filename, path, description)
 		message = message:sub(1, -3)
 	end
 	message = message .. " ]}"
-	sendPost(message, filename)
+	sendPost(message, filename, url)
 end
 
 function FtpUploadTask.processRenderedPhotos(functionContext, exportContext)
@@ -83,6 +83,7 @@ function FtpUploadTask.processRenderedPhotos(functionContext, exportContext)
 	local exportSession = exportContext.exportSession
 	local exportParams = exportContext.propertyTable
 	local ftpPreset = exportParams.ftpPreset
+	outputToLog(exportParams.postUrl.."")
 
 	-- Set progress title.
 
@@ -180,6 +181,7 @@ function FtpUploadTask.processRenderedPhotos(functionContext, exportContext)
 			local filename = LrPathUtils.leafName(pathOrMessage)
 
 			local success = ftpInstance:putFile(pathOrMessage, filename)
+			
 			LrTasks.startAsyncTask(
 				function()
 					prepareImage(
@@ -187,7 +189,8 @@ function FtpUploadTask.processRenderedPhotos(functionContext, exportContext)
 						photoRendered,
 						photoRendered:getFormattedMetadata("fileName"),
 						ftpInstance.path,
-						photoRendered:getFormattedMetadata("caption")
+						photoRendered:getFormattedMetadata("caption"),
+						exportParams.postUrl
 					)
 				end
 			)

@@ -161,6 +161,23 @@ function FtpUploadExportDialogSections.sectionsForBottomOfDialog( _, propertyTab
 				},
 			},
 		},
+		{
+			title = LOC "$$$/FtpUpload/ExportDialog/FtpSettings=POST Server",
+			--synopsis = bind { key = 'postUrl', object = propertyTable },
+			f:row {
+				f:static_text {
+					title = LOC "$$$/FtpUpload/ExportDialog/ServerUrl=Server POST URL:",
+					alignment = 'right',
+					width = share 'labelWidth'
+				},
+				f:edit_field {
+					value = bind 'postUrl',
+					truncation = 'middle',
+					immediate = true,
+					fill_horizontal = 1,
+				},
+			}
+		}
 	}
 	
 	return result
