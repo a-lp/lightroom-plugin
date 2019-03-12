@@ -48,7 +48,7 @@ function sendPost(message, photo, url)
 	--outputToLog("Messaggio:\n" .. message)
 	--local result, hdrs = LrHttp.post("http://localhost:80/prova/index.php", message, headers)
 	--GESTIRE TOKEN DI LOGIN
-	local result, hdrs = LrHttp.post("http://localhost:80/prova/index.php", message, headers) --"http://galleria.build/photo/json"
+	local result, hdrs = LrHttp.post(url, message, headers) --"http://galleria.build/photo/json"
 	if (result == nil) then
 		table.insert(errors, photo)
 	else
