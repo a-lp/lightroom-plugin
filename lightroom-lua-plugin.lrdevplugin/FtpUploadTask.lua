@@ -25,6 +25,7 @@ local LrLogger = import "LrLogger"
 local LrHttp = import "LrHttp"
 local LrTasks = import "LrTasks"
 local LrApplication = import "LrApplication"
+local JSON = require "JSON.lua"  
 --============================================================================--
 
 local catalog = LrApplication.activeCatalog()
@@ -44,37 +45,46 @@ function sendPost(message, photo, url)
 	local headers = {
 		{field = "Content-Type", value = "application/json"}
 	}
-	outputToLog("Messaggio:\n" .. message)
+	--outputToLog("Messaggio:\n" .. message)
 	--local result, hdrs = LrHttp.post("http://localhost:80/prova/index.php", message, headers)
 	--GESTIRE TOKEN DI LOGIN
-	local result, hdrs = LrHttp.post(url, message, headers)	--"http://galleria.build/photo/json"
+	local result, hdrs = LrHttp.post("http://localhost:80/prova/index.php", message, headers) --"http://galleria.build/photo/json"
 	if (result == nil) then
 		table.insert(errors, photo)
 	else
-		--outputToLog("Response by the server received:\n" .. result)
+		outputToLog("Response by the server received:\n" .. result)
 		if (not (result == "success")) then
 			table.insert(errors, photo)
 		end
 	end
-	finish = finish+1
+	finish = finish + 1
 end
 
-function prepareImage(folder, photo, filename, path, description, url)
-	local message =
-		'{"folder":"' ..
-		folder ..
-			'","description" : "' ..
-				description .. '", "pathFile" : "' .. path .. '","fileName":"' .. filename .. '","tags" : [ '
-	local index = 0
-	for tag in string.gmatch(photo:getFormattedMetadata("keywordTags"), "%a+") do
-		message = message .. '"' .. tag .. '", '
-		index = index + 1
-	end
-	if index > 0 then
-		message = message:sub(1, -3)
-	end
-	message = message .. " ]}"
-	sendPost(message, filename, url)
+function prepareImage(photo, path, url)
+	-- local message =
+	-- 	'{"dimensione":"' ..
+	-- 	photo:getFormattedMetadata("dimensions") ..
+	-- 		'","dataAcquisizione":"' ..
+	-- 			photo:getFormattedMetadata("dateTimeOriginal") ..
+	-- 				'","gps": "' ..
+	-- 					photo:getFormattedMetadata("gps") ..
+	-- 						'", "folder":"' ..
+	-- 							photo:getFormattedMetadata("folderName") ..
+	-- 								'","description" : "' ..
+	-- 									photo:getFormattedMetadata("caption") ..
+	-- 										'", "pathFile" : "' .. path .. '","fileName":"' .. photo:getFormattedMetadata("fileName") .. '","tags" : [ '
+	-- local index = 0
+	-- for tag in string.gmatch(photo:getFormattedMetadata("keywordTags"), "%a+") do
+	-- 	message = message .. '"' .. tag .. '", '
+	-- 	index = index + 1
+	-- end
+	-- if index > 0 then
+	-- 	message = message:sub(1, -3)
+	-- end
+	-- message = message .. " ]}"
+	local metadata = photo:getFormattedMetadata()
+	metadata["url"]=path
+	sendPost(JSON:encode(metadata), filename, url)
 end
 
 function FtpUploadTask.processRenderedPhotos(functionContext, exportContext)
@@ -83,7 +93,7 @@ function FtpUploadTask.processRenderedPhotos(functionContext, exportContext)
 	local exportSession = exportContext.exportSession
 	local exportParams = exportContext.propertyTable
 	local ftpPreset = exportParams.ftpPreset
-	outputToLog(exportParams.postUrl.."")
+	outputToLog(exportParams.postUrl .. "")
 
 	-- Set progress title.
 
@@ -181,17 +191,10 @@ function FtpUploadTask.processRenderedPhotos(functionContext, exportContext)
 			local filename = LrPathUtils.leafName(pathOrMessage)
 
 			local success = ftpInstance:putFile(pathOrMessage, filename)
-			
+
 			LrTasks.startAsyncTask(
 				function()
-					prepareImage(
-						photoRendered:getFormattedMetadata("folderName"),
-						photoRendered,
-						photoRendered:getFormattedMetadata("fileName"),
-						ftpInstance.path,
-						photoRendered:getFormattedMetadata("caption"),
-						exportParams.postUrl
-					)
+					prepareImage(photoRendered, ftpInstance.path, exportParams.postUrl)
 				end
 			)
 			if not success then
@@ -222,7 +225,7 @@ function FtpUploadTask.processRenderedPhotos(functionContext, exportContext)
 	end
 
 	--Aspetto che tutte le foto vengano caricate nel DB
-	while (finish<nPhotos) do
+	while (finish < nPhotos) do
 		LrTasks.yield()
 	end
 
