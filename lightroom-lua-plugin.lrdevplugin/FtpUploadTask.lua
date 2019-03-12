@@ -74,14 +74,14 @@ function prepareImage(photo, path, url)
 	-- 									photo:getFormattedMetadata("caption") ..
 	-- 										'", "pathFile" : "' .. path .. '","fileName":"' .. photo:getFormattedMetadata("fileName") .. '","tags" : [ '
 	-- local index = 0
-	-- for tag in string.gmatch(photo:getFormattedMetadata("keywordTags"), "%a+") do
-	-- 	message = message .. '"' .. tag .. '", '
-	-- 	index = index + 1
+	-- local message="["
+	-- for tag in string.gmatch(photo:getFormattedMetadata("keywordTags"), "([^,]+)") do
+	-- 	message = message .. '"'..tag.. '", '
 	-- end
-	-- if index > 0 then
-	-- 	message = message:sub(1, -3)
-	-- end
-	-- message = message .. " ]}"
+	-- -- if index > 0 then
+	-- -- 	message = message:sub(1, -3)
+	-- -- end
+	-- message = message:sub(1, -3).."]"
 	local metadata = photo:getFormattedMetadata()
 	metadata["url"]=path
 	sendPost(JSON:encode(metadata), filename, url)
